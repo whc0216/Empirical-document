@@ -29,9 +29,9 @@
 
 - $Eff_{j, t-1} > Eff_{i, t-1}$
   
-- $Eff_{j, t-1} > 1 $ and $ Eff_{i, t-1} < 1$
+- $Eff_{j, t-1} > 1$ and $ Eff_{i, t-1} < 1$
 
-- $Eff_{j, t-1} > quantile(Eff_{m, t-1}, 0.7) $ and $Eff_{j, t-1} < quantile(Eff_{m, t-1}, 0.3), \forall m = 1, 2, \cdots, M$.
+- $Eff_{j, t-1} > quantile(Eff_{m, t-1}, 0.7)$ and $Eff_{j, t-1} < quantile(Eff_{m, t-1}, 0.3), \forall m = 1, 2, \cdots, M$.
 
 注意，对于最后一种定义，可以尝试写一个函数，将threhold(前30%， 后30%)当做一个函数。
 
