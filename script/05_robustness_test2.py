@@ -3,7 +3,8 @@ import numpy as np
 import statsmodels.formula.api as smf
 from statsmodels.iolib.summary2 import summary_col
 
-file1 = r"c:\Users\13298\Desktop\project\data\raw\支出效率.xlsx"
+#更换支出效率计算方式
+file1 = r"C:\Users\13298\Desktop\project\data\raw\SFA支出效率.xlsx"
 file2 = r"C:\Users\13298\Desktop\project\data\raw\中国城市数据库4.0版.xlsx"
 file3 = r"C:\Users\13298\Desktop\project\data\raw\官员数据.xlsx"
 file4 = r"C:\Users\13298\Desktop\project\data\raw\市长个人信息.xlsx"
@@ -19,7 +20,7 @@ def add_city_suffix(df):
 
 df1 = add_city_suffix(df1)
 df3 = add_city_suffix(df3)
-df3 = pd.merge(df3, df1[['city', 'year', 'Efficiency1']], on=['city', 'year'], how='left')
+df3 = pd.merge(df3, df1[['city', 'year', 'SFA']], on=['city', 'year'], how='left')
 
 df2 = add_city_suffix(df2)
 merge_columns = ['city', 'year', '第二产业增加值(万元)', '地区生产总值(万元)', '地方财政一般预算内支出(万元)',
@@ -33,7 +34,7 @@ df3['perGDP_log'] = np.log10(df3['人均地区生产总值(元)'])
 
 df3 = df3.drop_duplicates(subset=['city', 'year', 'leader'])
 
-columns_to_describe1 = ['Efficiency1', 'industry_structure', 'Fiscal_autonomy', 'population_log', 'perGDP_log']
+columns_to_describe1 = ['SFA', 'industry_structure', 'Fiscal_autonomy', 'population_log', 'perGDP_log']
 print(df3[columns_to_describe1].describe())
 
 df4 = add_city_suffix(df4)
@@ -79,11 +80,11 @@ new_df2 = pd.read_excel(new_df2_path)
 
 df3 = pd.merge(df3, new_df2, left_on=['last_city', 'tenure_year'], right_on=['city', 'year'], how='left', suffixes=('', '_new2'))
 
-df3.rename(columns={'Efficiency1_new2': 'last'}, inplace=True)
+df3.rename(columns={'Efficiency1': 'last'}, inplace=True)
 
 df3 = pd.merge(df3, new_df2[['city', 'year', 'Efficiency1']], left_on=['city', 'tenure_year'], right_on=['city', 'year'], how='left', suffixes=('', '_new3'))
 
-df3.rename(columns={'Efficiency1_new3': 'now'}, inplace=True)
+df3.rename(columns={'Efficiency1': 'now'}, inplace=True)
 
 df3 = df3.drop_duplicates(subset=['city', 'year', 'leader'])
 
@@ -101,6 +102,21 @@ df3.loc[missing_indexes, 'now'] = fill_value
 
 print(df3['now'].describe())
 
-excel_file_path = r"C:\Users\13298\Desktop\project\data\processed\panel.xlsx"
-df3.to_excel(excel_file_path, index=False)
-print(f"数据已保存到 {excel_file_path}")
+data=df3
+
+data['past_experience']=data['last']-data['now']
+
+data['past_experience_dummy'] = (data['past_experience'] > 0).astype(int)
+
+regression1 = smf.ols(formula='SFA ~ past_experience_dummy + industry_structure + Fiscal_autonomy + population_log + perGDP_log + male + age + education + C(year) +C(city)',data=data)
+result_reg1 = regression1.fit()
+
+result=summary_col([result_reg1],
+                   model_names=['(1)'],
+                   stars=True,
+                   regressor_order=['Intercept','past_experience_dummy',
+                                    'male', 'age', 'education', 'industry_structure','Fiscal_autonomy', 'population_log', 'perGDP_log'],
+                    drop_omitted=True,
+                    info_dict={'Observations': lambda x: str(int(x.nobs))})
+
+print(result)
